@@ -45,6 +45,7 @@ import androidx.core.net.toUri
 import com.ramcosta.composedestinations.generated.destinations.QuickResponsesScreenDestination
 import dev.goodwy.rphone.view.components.RillSelectListItem
 import dev.goodwy.rphone.view.components.Title
+import io.github.bootika.dotdialer.core.call.CallPresentationPolicy
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Destination<RootGraph>
@@ -59,7 +60,14 @@ fun CallSettingScreen(navigator: DestinationsNavigator) {
     var directCallOnTap by remember { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_DIRECT_CALL_ON_TAP, false)) }
     var autoSpeaker by remember { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_AUTO_SPEAKER, false)) }
     var defaultSim by remember { mutableStateOf(prefs.getInt(PreferenceManager.KEY_DEFAULT_SIM, prefs.getDefaultSimIndexDefault())) }
-    var fullscreenCalls by remember { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS, false)) }
+    var fullscreenCalls by remember {
+        mutableStateOf(
+            prefs.getBoolean(
+                PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS,
+                CallPresentationPolicy.DEFAULT_ALWAYS_FULL_SCREEN,
+            )
+        )
+    }
 
     var visible by remember { mutableStateOf(false) }
     val screenAlpha by animateFloatAsState(

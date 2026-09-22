@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import dev.goodwy.rphone.MainActivity
 import dev.goodwy.rphone.R
 import dev.goodwy.rphone.controller.util.PreferenceManager
+import io.github.bootika.dotdialer.core.call.CallPresentationPolicy
 
 class CallNotificationManager(
     private val context: Context,
@@ -32,7 +33,7 @@ class CallNotificationManager(
         const val CHANNEL_ID_LOW = "call_channel_low"
         const val CHANNEL_ID_HIGH = "call_channel_high"
         const val INCOMING_CHANNEL_ID = "incoming_call_channel_v3"
-        const val FULLSCREEN_INCOMING_CHANNEL_ID = "fullscreen_incoming_call_channel_v3"
+        const val FULLSCREEN_INCOMING_CHANNEL_ID = "fullscreen_incoming_call_channel_v4"
         const val MISSED_CHANNEL_ID = "missed_call_channel_v3"
         const val NOTIFICATION_ID = 101
     }
@@ -60,7 +61,10 @@ class CallNotificationManager(
         audioState: CallAudioState?,
         high: Boolean = false
     ): Notification {
-        val fullscreenCalls = preferenceManager.getBoolean(PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS, false)
+        val fullscreenCalls = preferenceManager.getBoolean(
+            PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS,
+            CallPresentationPolicy.DEFAULT_ALWAYS_FULL_SCREEN,
+        )
         val isRinging = call.state == Call.STATE_RINGING
         val channelId = if (isRinging) {
             if (fullscreenCalls) FULLSCREEN_INCOMING_CHANNEL_ID else INCOMING_CHANNEL_ID
@@ -74,7 +78,7 @@ class CallNotificationManager(
                 NotificationChannel(
                     channelId,
                     if (fullscreenCalls) context.getString(R.string.notif_channel_fullscreen_incoming_calls) else context.getString(R.string.notif_channel_incoming_calls),
-                    if (fullscreenCalls) NotificationManager.IMPORTANCE_LOW else NotificationManager.IMPORTANCE_HIGH
+                    NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                     enableVibration(true)

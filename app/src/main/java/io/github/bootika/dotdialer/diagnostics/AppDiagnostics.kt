@@ -1,6 +1,7 @@
 package io.github.bootika.dotdialer.diagnostics
 
 import android.Manifest
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -91,6 +92,10 @@ object AppDiagnostics {
     private fun buildReport(): String {
         val telecomManager = appContext.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
         val isDefaultDialer = telecomManager?.defaultDialerPackage == appContext.packageName
+        val notificationManager = appContext.getSystemService(NotificationManager::class.java)
+        val canUseFullScreenIntent =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
+                notificationManager.canUseFullScreenIntent()
         val missingPermissions = relevantPermissions()
             .filterNot { permission ->
                 appContext.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
@@ -108,6 +113,7 @@ object AppDiagnostics {
             appendLine("android_api=${Build.VERSION.SDK_INT}")
             appendLine("device=${safeHeaderValue(Build.MANUFACTURER)} ${safeHeaderValue(Build.MODEL)}")
             appendLine("default_dialer=$isDefaultDialer")
+            appendLine("full_screen_intent_allowed=$canUseFullScreenIntent")
             appendLine("missing_permissions=${missingPermissions.ifEmpty { listOf("none") }.joinToString(",")}")
             appendLine("journal_write_error=${lastWriteError ?: "none"}")
             appendLine("privacy=phone numbers, contact names, notes and exception messages are excluded")

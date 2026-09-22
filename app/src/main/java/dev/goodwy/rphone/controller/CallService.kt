@@ -27,6 +27,7 @@ import dev.goodwy.rphone.modal.`interface`.CallSession
 import dev.goodwy.rphone.modal.`interface`.ICallRepository
 import dev.goodwy.rphone.modal.repository.CallRepositoryImpl
 import dev.goodwy.rphone.view.screen.BiometricCallActivity
+import io.github.bootika.dotdialer.core.call.CallPresentationPolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -451,8 +452,16 @@ class CallService : InCallService() {
 
             updateNotification(call)
 
-            val fullscreenCalls = preferenceManager.getBoolean(PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS, false)
-            if (call.state != Call.STATE_RINGING || fullscreenCalls) {
+            val fullscreenCalls = preferenceManager.getBoolean(
+                PreferenceManager.KEY_ALWAYS_FULLSCREEN_CALLS,
+                CallPresentationPolicy.DEFAULT_ALWAYS_FULL_SCREEN,
+            )
+            if (
+                CallPresentationPolicy.shouldLaunchCallActivity(
+                    isIncomingRinging = call.state == Call.STATE_RINGING,
+                    alwaysFullScreen = fullscreenCalls,
+                )
+            ) {
                 val intent = Intent(this@CallService, CallActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
