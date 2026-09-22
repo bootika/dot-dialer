@@ -1,7 +1,9 @@
 package dev.goodwy.rphone.view.screen
 
-import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -59,8 +61,8 @@ fun DefaultDialerScreen(navController: NavController, navigator: DestinationsNav
 
     val roleRequestLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
+    ) {
+        if (isAlreadyDefaultDialer(context)) {
             isDenied = false
             navigator.navigate(initialRoute) {
                 popUpTo(DefaultDialerScreenDestination) { inclusive = true }
@@ -143,13 +145,31 @@ fun DefaultDialerScreen(navController: NavController, navigator: DestinationsNav
                             .padding(top = 32.dp, start = 24.dp, end = 24.dp)
                             .wrapContentWidth()
                     ) {
-                        Text(
-                            text = stringResource(R.string.default_dialer_warning),
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            style = MaterialTheme.typography.bodyMedium,
+                        Column(
                             modifier = Modifier.padding(16.dp),
-                            textAlign = TextAlign.Center
-                        )
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(R.string.default_dialer_restricted_settings_help),
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    val appSettingsIntent = Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", context.packageName, null)
+                                    )
+                                    context.startActivity(appSettingsIntent)
+                                }
+                            ) {
+                                Text(text = stringResource(R.string.open_app_settings))
+                            }
+                        }
                     }
                 }
 

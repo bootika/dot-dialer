@@ -572,6 +572,8 @@
     <string name="default_dialer_title">Set Dot Dialer as default</string>
     <string name="default_dialer_subtitle">Dot Dialer can only start &amp; receive calls if it\'s your default phone app</string>
     <string name="default_dialer_warning">The app cannot function without this permission. Please try again.</string>
+    <string name="default_dialer_restricted_settings_help" tools:ignore="MissingTranslation">Android may block the default Phone role because this test APK was installed manually. Open app settings, use the three-dot menu to Allow restricted settings, then return and try again.</string>
+    <string name="open_app_settings" tools:ignore="MissingTranslation">Open app settings</string>
 
     <!-- Call notes -->
     <string name="notes">Notes</string>
