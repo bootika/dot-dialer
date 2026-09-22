@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import dev.goodwy.rphone.R
+import io.github.bootika.dotdialer.core.preferences.DotDialerPreferenceDefaults
 
 private val dataStoreScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 private var _sharedDataStore: DataStore<Preferences>? = null
@@ -92,14 +93,18 @@ class PreferenceManager(context: Context) {
 
     // Synchronous-style API for backward compatibility
     fun getBoolean(key: String, defaultValue: Boolean): Boolean =
-        _prefsCache.value[booleanPreferencesKey(key)] ?: defaultValue
+        _prefsCache.value[booleanPreferencesKey(key)]
+            ?: DotDialerPreferenceDefaults.booleanFor(key)
+            ?: defaultValue
 
     fun setBoolean(key: String, value: Boolean) {
         scope.launch { dataStore.edit { it[booleanPreferencesKey(key)] = value } }
     }
 
     fun getString(key: String, defaultValue: String?): String? =
-        _prefsCache.value[stringPreferencesKey(key)] ?: defaultValue
+        _prefsCache.value[stringPreferencesKey(key)]
+            ?: DotDialerPreferenceDefaults.stringFor(key)
+            ?: defaultValue
 
     fun setString(key: String, value: String?) {
         scope.launch {
@@ -111,7 +116,9 @@ class PreferenceManager(context: Context) {
     }
 
     fun getInt(key: String, defaultValue: Int): Int =
-        _prefsCache.value[intPreferencesKey(key)] ?: defaultValue
+        _prefsCache.value[intPreferencesKey(key)]
+            ?: DotDialerPreferenceDefaults.intFor(key)
+            ?: defaultValue
 
     fun setInt(key: String, value: Int) {
         scope.launch { dataStore.edit { it[intPreferencesKey(key)] = value } }

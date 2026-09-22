@@ -3,6 +3,8 @@ package dev.goodwy.rphone.controller.util
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Environment
+import io.github.bootika.dotdialer.core.preferences.BackupEntryPolicy
+import io.github.bootika.dotdialer.core.preferences.PreferenceBackupPolicy
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -33,7 +35,9 @@ object BackupManager {
             ZipOutputStream(FileOutputStream(backupFile)).use { zip ->
                 // 1. Backup Preferences (DataStore via PreferenceManager)
                 val manager = PreferenceManager(context)
-                val prefsJson = prefsToJson(manager.getAllPreferences())
+                val portablePreferences = manager.getAllPreferences()
+                    .filterKeys(PreferenceBackupPolicy::isPortable)
+                val prefsJson = prefsToJson(portablePreferences)
                 zip.putNextEntry(ZipEntry("prefs.json"))
                 zip.write(prefsJson.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
@@ -61,8 +65,8 @@ object BackupManager {
                             restorePrefs(context, json)
                         }
                         entry.name.startsWith("notes/") -> {
-                            val fileName = entry.name.removePrefix("notes/")
-                            if (fileName.isNotEmpty()) {
+                            val fileName = BackupEntryPolicy.safeNoteFileName(entry.name)
+                            if (fileName != null) {
                                 val noteFile = File(NoteManager.getNotesDir(context), fileName)
                                 noteFile.parentFile?.mkdirs()
                                 FileOutputStream(noteFile).use { zip.copyTo(it) }
@@ -110,6 +114,7 @@ object BackupManager {
             val meta = if (raw.has("meta")) raw.getJSONObject("meta") else JSONObject()
 
             jsonObj.keys().forEach { key ->
+                if (!PreferenceBackupPolicy.isPortable(key)) return@forEach
                 val value = jsonObj.get(key)
                 when {
                     meta.optString(key) == "float" -> restoredMap[key] = (value as? Double)?.toFloat() ?: value
