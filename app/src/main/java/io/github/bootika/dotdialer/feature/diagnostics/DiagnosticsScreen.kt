@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Refresh
@@ -54,6 +55,7 @@ import dev.goodwy.rphone.controller.util.toast
 import dev.goodwy.rphone.view.components.NavigationIcon
 import dev.goodwy.rphone.view.components.Title
 import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
+import io.github.bootika.dotdialer.observability.AppTelemetry
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,9 +67,11 @@ fun DiagnosticsScreen(navigator: DestinationsNavigator) {
     val revision by AppDiagnostics.revision.collectAsStateWithLifecycle()
     val loadingText = stringResource(R.string.diagnostics_loading)
     val copiedText = stringResource(R.string.diagnostics_copied)
+    val sentryTestFailedText = stringResource(R.string.sentry_test_failed)
     var refreshRequest by remember { mutableIntStateOf(0) }
     var report by remember(loadingText) { mutableStateOf(loadingText) }
     var showClearConfirmation by remember { mutableStateOf(false) }
+    var sentryEventId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(revision, refreshRequest) {
         report = AppDiagnostics.report(context)
@@ -127,6 +131,49 @@ fun DiagnosticsScreen(navigator: DestinationsNavigator) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (AppTelemetry.isEnabled) {
+                                R.string.sentry_connected
+                            } else {
+                                R.string.sentry_not_configured
+                            }
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                sentryEventId = AppTelemetry.captureTestEvent()
+                                if (sentryEventId == null) context.toast(sentryTestFailedText)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = AppTelemetry.isEnabled,
+                    ) {
+                        Icon(Icons.Rounded.CloudUpload, contentDescription = null)
+                        Spacer(Modifier.padding(horizontal = 5.dp))
+                        Text(stringResource(R.string.send_sentry_test))
+                    }
+                    sentryEventId?.let { eventId ->
+                        Text(
+                            text = stringResource(R.string.sentry_test_sent, eventId),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
+                }
             }
 
             Button(

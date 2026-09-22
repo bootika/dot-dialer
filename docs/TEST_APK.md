@@ -16,14 +16,20 @@ phone app.
 Open the APK on the phone and allow installation from that source, or use ADB:
 
 ```shell
-adb install -r app/build/outputs/apk/foss/debug/dot-dialer-52-foss-debug.apk
+adb install -r app/build/outputs/apk/foss/debug/dot-dialer-53-foss-debug.apk
 ```
 
-The `52` segment is the current version code and changes when the project version is incremented.
+The `53` segment is the current version code and changes when the project version is incremented.
 
 If Android reports a signature mismatch after switching between a local and a CI-built APK,
 uninstall only `Dot Dialer Test`, then install the new APK. Its settings and local diagnostic log
 will be removed by that uninstall.
+
+Android 13 and newer can block sensitive settings for sideloaded APKs. Dot Dialer does not expose an
+accessibility service or notification-listener service, so **Allow restricted settings** is not
+required for the current test build. The default-phone role and the normal Phone, Contacts and Call
+log permission prompts are separate Android controls. Do not enable restricted settings unless a
+future feature has a documented need for one.
 
 ## Capture diagnostics
 

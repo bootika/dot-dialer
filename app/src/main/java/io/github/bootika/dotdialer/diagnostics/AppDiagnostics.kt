@@ -8,6 +8,7 @@ import android.telecom.TelecomManager
 import dev.goodwy.rphone.BuildConfig
 import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
 import io.github.bootika.dotdialer.core.diagnostics.DiagnosticFormatter
+import io.github.bootika.dotdialer.observability.AppTelemetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +55,7 @@ object AppDiagnostics {
         if (!initialized.get()) return
         val timestamp = Instant.now().toString()
         val safeLine = "$timestamp | ${DiagnosticFormatter.format(event)}"
+        AppTelemetry.addBreadcrumb(event)
 
         executor.execute {
             try {

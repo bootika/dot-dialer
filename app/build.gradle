@@ -16,6 +16,8 @@ if (localPropertiesFile.exists()) {
 def productId = localProperties.getProperty('PRODUCT_ID_X1', '')
 def subscriptionId = localProperties.getProperty('SUBSCRIPTION_ID_X1', '')
 def subscriptionYearId = localProperties.getProperty('SUBSCRIPTION_YEAR_ID_X1', '')
+def sentryDsn = System.getenv('SENTRY_DSN') ?: localProperties.getProperty('SENTRY_DSN', '')
+def escapedSentryDsn = sentryDsn.replace('\\', '\\\\').replace('"', '\\"')
 
 android {
     namespace = 'dev.goodwy.rphone'
@@ -25,8 +27,8 @@ android {
         applicationId = "io.github.bootika.dotdialer"
         minSdk = 29
         targetSdk = 37
-        versionCode = 52
-        versionName = "0.5.2"
+        versionCode = 53
+        versionName = "0.5.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
@@ -34,6 +36,7 @@ android {
         buildConfigField "String", "PRODUCT_ID_X1", "\"$productId\""
         buildConfigField "String", "SUBSCRIPTION_ID_X1", "\"$subscriptionId\""
         buildConfigField "String", "SUBSCRIPTION_YEAR_ID_X1", "\"$subscriptionYearId\""
+        buildConfigField "String", "SENTRY_DSN", "\"$escapedSentryDsn\""
     }
 
     base {
@@ -140,6 +143,9 @@ dependencies {
     implementation 'androidx.biometric:biometric:1.2.0-alpha05'
     implementation 'androidx.fragment:fragment-ktx:1.8.5'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
+
+    // Crash and ANR reporting. Initialization and privacy controls live in AppTelemetry.
+    implementation 'io.sentry:sentry-android:8.57.0'
 
     // Compose Destinations
     implementation 'io.github.raamcosta.compose-destinations:core:2.1.0'

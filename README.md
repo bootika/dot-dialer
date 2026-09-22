@@ -27,7 +27,8 @@ Requirements: JDK 17 and an Android SDK containing platform 37.0.
 
 See [architecture](docs/ARCHITECTURE.md), [testing](docs/TESTING.md),
 [test APK and diagnostics](docs/TEST_APK.md), and
-[accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md).
+[accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md). Crash/ANR collection and its privacy
+boundary are documented in [observability](docs/OBSERVABILITY.md).
 
 ## Upstream and license
 

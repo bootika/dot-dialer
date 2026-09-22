@@ -673,4 +673,9 @@
     <string name="clear_diagnostics_title" tools:ignore="MissingTranslation">Clear diagnostic log?</string>
     <string name="clear_diagnostics_message" tools:ignore="MissingTranslation">This removes the locally stored diagnostic events. It does not change contacts, calls or settings.</string>
     <string name="diagnostics_loading" tools:ignore="MissingTranslation">Loading diagnostics…</string>
+    <string name="sentry_connected" tools:ignore="MissingTranslation">Sentry crash and ANR reporting is connected for this build.</string>
+    <string name="sentry_not_configured" tools:ignore="MissingTranslation">Sentry is unavailable in this build.</string>
+    <string name="send_sentry_test" tools:ignore="MissingTranslation">Send Sentry test event</string>
+    <string name="sentry_test_sent" tools:ignore="MissingTranslation">Sentry test event sent: %1$s</string>
+    <string name="sentry_test_failed" tools:ignore="MissingTranslation">Sentry is not available in this build</string>
 </resources>

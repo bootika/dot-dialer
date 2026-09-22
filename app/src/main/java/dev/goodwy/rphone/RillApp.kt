@@ -7,12 +7,14 @@ import dev.goodwy.rphone.view.screen.settings.applyIcon
 import dev.goodwy.rphone.view.screen.settings.buildIcons
 import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
 import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
+import io.github.bootika.dotdialer.observability.AppTelemetry
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
 class RillApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppTelemetry.initialize(this)
         AppDiagnostics.initialize(this)
         AppDiagnostics.record(
             DiagnosticEvent.AppStarted(
