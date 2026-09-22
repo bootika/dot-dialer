@@ -507,7 +507,7 @@ fun ContactSearchContent(
                                                     pendingNumber = entry.number; showSimPicker = true
                                                 }
                                             }) {
-                                                Icon(Icons.Outlined.Call, contentDescription = "Call", tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.Outlined.Call, contentDescription = stringResource(R.string.call), tint = MaterialTheme.colorScheme.primary)
                                             }
                                         },
                                         onCall = {

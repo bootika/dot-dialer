@@ -1,12 +1,8 @@
 package dev.goodwy.rphone.view.components
 
 import android.annotation.SuppressLint
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
-import android.os.VibratorManager
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.ripple
@@ -50,6 +46,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.goodwy.rphone.controller.util.PreferenceManager
+import dev.goodwy.rphone.controller.util.AndroidHaptics
+import dev.goodwy.rphone.core.haptics.HapticIntent
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,40 +75,21 @@ fun performAppHaptic(
     strength: String,
     customIntensity: Float = 0.5f
 ) {
-    try {
-        val durationMs: Long
-        val amplitude: Int
-        when (strength) {
-            "strong" -> { durationMs = 40; amplitude = VibrationEffect.DEFAULT_AMPLITUDE }
-            "custom" -> {
-                durationMs = (10 + customIntensity * 70).toLong().coerceIn(10, 80)
-                amplitude  = (40  + (customIntensity * 215)).toInt().coerceIn(40, 255)
-            }
-            else -> { durationMs = 20; amplitude = 80 } // light
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vm = context.getSystemService(VibratorManager::class.java)
-            vm?.defaultVibrator?.vibrate(VibrationEffect.createOneShot(durationMs, amplitude))
-        } else {
-            val vibrator = context.getSystemService(Vibrator::class.java)
-            vibrator?.vibrate(VibrationEffect.createOneShot(durationMs, amplitude))
-        }
-    } catch (_: Exception) {}
+    AndroidHaptics.performPulse(
+        context = context,
+        intent = HapticIntent.TAP,
+        strengthValue = strength,
+        customIntensity = customIntensity,
+    )
 }
 
 fun performScrollHaptic(context: android.content.Context, amplitude: Int = 60) {
-    try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vm = context.getSystemService(VibratorManager::class.java)
-            val vibrator = vm?.defaultVibrator
-            val effect = VibrationEffect.createOneShot(10, amplitude.coerceIn(1, 255))
-            vibrator?.vibrate(effect)
-        } else {
-            val vibrator = context.getSystemService(Vibrator::class.java)
-            val effect = VibrationEffect.createOneShot(10, amplitude.coerceIn(1, 255))
-            vibrator?.vibrate(effect)
-        }
-    } catch (_: Exception) {}
+    AndroidHaptics.performPulse(
+        context = context,
+        intent = HapticIntent.SCROLL_TICK,
+        strengthValue = "custom",
+        customIntensity = (amplitude.coerceIn(1, 255) - 1) / 254f,
+    )
 }
 
 /**

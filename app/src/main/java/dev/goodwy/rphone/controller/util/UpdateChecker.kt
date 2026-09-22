@@ -211,7 +211,10 @@ fun installApkAndScheduleDelete(context: Context, file: File) {
                 }
             }, 5 * 60 * 1000L)
             
-            val intent = Intent(installResultAction)
+            // PackageInstaller needs a mutable PendingIntent to add the result extras.
+            // Scoping the broadcast to our package prevents it from being an unsafe
+            // mutable implicit PendingIntent on Android 12+.
+            val intent = Intent(installResultAction).setPackage(context.packageName)
             val pi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 PendingIntent.getBroadcast(context, sessionId, intent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             } else {

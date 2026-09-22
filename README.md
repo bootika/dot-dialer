@@ -1,18 +1,39 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="120" alt="App icon"/>
+# Dot Dialer
 
-# Rill Phone
-<a href='https://play.google.com/store/apps/details?id=dev.goodwy.rphone'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height=80/></a>
+An open-source Android dialer focused on reliable call lifecycle handling, fast contact search,
+accessibility and restrained, system-consistent haptics.
+
 </div>
 
-Rill Phone is a modern phone and contact management app that prioritizes your privacy. Featuring a clean interface inspired by contemporary Google Material Design, it offers a familiar and intuitive user experience without any ads or tracking. The app is completely transparent and does not collect or transmit any of your personal data, ensuring your calls and contacts remain private and secure. <br><br>
+> Dot Dialer is in foundation work and is not ready for daily use or public release yet.
 
-## ☕ Support the Project
+## Current focus
 
-If you find **Rill Phone** useful and would like to support its development, consider
-buying me a coffee! Your support helps me maintain and improve this project.
+- deterministic call state, without stuck call UI or notifications;
+- automated unit, Android and lifecycle-abuse testing;
+- accessible Compose components and scalable UI;
+- a reusable contact index and T9 search foundation;
+- secure preferences, private contacts and backup/restore.
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/goodwy)
+## Build and verify
 
-*Every contribution, no matter how small, helps keep this project alive and growing! ❤️*<br><br>
+Requirements: JDK 17 and an Android SDK containing platform 37.
+
+```shell
+./gradlew :app:compileFossDebugKotlin \
+  :app:testFossDebugUnitTest \
+  :app:compileFossDebugAndroidTestKotlin \
+  :app:lintFossDebug
+```
+
+See [testing](docs/TESTING.md) and [accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md).
+
+## Upstream and license
+
+Dot Dialer is based on [Goodwy/RPhone](https://github.com/Goodwy/RPhone). The original history and
+copyright notices are retained; details are in [UPSTREAM.md](UPSTREAM.md).
+
+The source is licensed under [GNU GPL version 3](LICENSE). Selling binaries is permitted by the
+license, while recipients retain the GPL rights to the corresponding source.

@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.Role.Companion
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -54,16 +56,20 @@ fun RillIconButton(
         modifier =
             Modifier
                 .minimumInteractiveComponentSize()
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                 .combinedClickable(
                     onClick = onClick,
+                    onClickLabel = contentDescription,
                     onLongClick = { context.toast(contentDescription) },
+                    onLongClickLabel = contentDescription,
                     role = Role.Button,
                     interactionSource = null,
                     indication = ripple(bounded = false, radius = 20.dp),
-                ),
+                )
+                .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(imageVector, contentDescription)
+        Icon(imageVector, contentDescription = null)
     }
 }
 
@@ -96,7 +102,7 @@ fun RillTextButton(
                 onLongClick = { if (enabled) context.toast(toast) },
                 role = Role.Button
             )
-            .height(height)
+            .height(height.coerceAtLeast(48.dp))
             .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         contentAlignment = Alignment.Center
     ) {

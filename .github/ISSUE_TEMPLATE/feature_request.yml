@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a focused improvement to Dot Dialer
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Explain the user problem before describing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: accessibility
+    attributes:
+      label: Accessibility and edge cases
+      description: Note relevant TalkBack, large-text, haptic, permission or call-state considerations.

@@ -1,0 +1,45 @@
+name: Bug report
+description: Report reproducible incorrect behavior in Dot Dialer
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Please remove phone numbers, contacts and other personal data from logs and screenshots.
+  - type: input
+    id: version
+    attributes:
+      label: Dot Dialer version or commit
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: Describe the shortest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include redacted logs or screenshots when they materially help.

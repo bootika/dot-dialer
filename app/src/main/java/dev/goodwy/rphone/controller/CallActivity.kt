@@ -5,13 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.telecom.Call
 import android.telecom.TelecomManager
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -38,7 +36,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.goodwy.rphone.R
 import dev.goodwy.rphone.controller.util.CallBackgroundStore
+import dev.goodwy.rphone.controller.util.AndroidHaptics
 import dev.goodwy.rphone.controller.util.PreferenceManager
+import dev.goodwy.rphone.core.haptics.HapticIntent
 import dev.goodwy.rphone.liquidglass.LocalLiquidGlassBackdrop
 import dev.goodwy.rphone.liquidglass.backdrops.rememberLayerBackdrop
 import dev.goodwy.rphone.modal.`interface`.CallSession
@@ -85,17 +85,11 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
 
         CallBackgroundStore.attach(preferenceManager)
 
-        val telecomManager = getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
-        val isTelecomInCall = try {
-            telecomManager?.isInCall == true
-        } catch (e: SecurityException) {
-            false
+        val isTelecomInCall = telecomInCall()
+        val repositoryHasActiveCall = callViewModel.allCalls.value.any {
+            it.state != Call.STATE_DISCONNECTED && it.state != Call.STATE_DISCONNECTING
         }
-
-        if (!isTelecomInCall &&
-            callViewModel.allCalls.value.none { it.state != Call.STATE_DISCONNECTED } &&
-            callViewModel.currentCallSession.value == null
-        ) {
+        if (isTelecomInCall == false || (isTelecomInCall == null && !repositoryHasActiveCall)) {
             setShowWhenLocked(false)
             setTurnScreenOn(false)
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -158,15 +152,14 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
                     }
                     when (callState) {
                         Call.STATE_ACTIVE -> {
-                            if (preferenceManager.getBoolean(PreferenceManager.KEY_VIBRATE_ON_ANSWER, true)) {
-                                this@CallActivity.window?.decorView?.performHapticFeedback(
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                        HapticFeedbackConstants.CONFIRM
-                                    } else {
-                                        HapticFeedbackConstants.VIRTUAL_KEY
-                                    }
-                                )
-                            }
+                            AndroidHaptics.performOnView(
+                                view = this@CallActivity.window.decorView,
+                                intent = HapticIntent.CONFIRM,
+                                appEnabled = preferenceManager.getBoolean(
+                                    PreferenceManager.KEY_VIBRATE_ON_ANSWER,
+                                    true,
+                                ),
+                            )
                             if (preferenceManager.getBoolean(PreferenceManager.KEY_PROXIMITY_SENSOR, true)) {
                                 acquireProximityLock()
                             } else {
@@ -183,15 +176,14 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
                         }
 
                         Call.STATE_DISCONNECTED -> {
-                            if (preferenceManager.getBoolean(PreferenceManager.KEY_VIBRATE_ON_HANGUP, false)) {
-                                this@CallActivity.window?.decorView?.performHapticFeedback(
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                        HapticFeedbackConstants.REJECT
-                                    } else {
-                                        HapticFeedbackConstants.LONG_PRESS
-                                    }
-                                )
-                            }
+                            AndroidHaptics.performOnView(
+                                view = this@CallActivity.window.decorView,
+                                intent = HapticIntent.REJECT,
+                                appEnabled = preferenceManager.getBoolean(
+                                    PreferenceManager.KEY_VIBRATE_ON_HANGUP,
+                                    false,
+                                ),
+                            )
                             releaseProximityLock()
                             delay(400.milliseconds)
                             dismissCallScreen()
@@ -407,7 +399,11 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
     private fun dismissCallScreen() {
         if (isFinishingCall.getAndSet(true)) return
 
-        if (callViewModel.allCalls.value.any { it.state != Call.STATE_DISCONNECTED }) {
+        val repositoryHasActiveCall = callViewModel.allCalls.value.any {
+            it.state != Call.STATE_DISCONNECTED && it.state != Call.STATE_DISCONNECTING
+        }
+        val isTelecomInCall = telecomInCall()
+        if (isTelecomInCall == true || (isTelecomInCall == null && repositoryHasActiveCall)) {
             isFinishingCall.set(false)
             return
         }
@@ -417,6 +413,19 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         finishAndRemoveTask()
+    }
+
+    /**
+     * Telecom is authoritative when it can be queried. A null result means the platform denied
+     * access, so callers may fall back to the repository without mistaking that denial for an
+     * ended call.
+     */
+    private fun telecomInCall(): Boolean? = try {
+        (getSystemService(Context.TELECOM_SERVICE) as? TelecomManager)?.isInCall
+    } catch (_: SecurityException) {
+        null
+    } catch (_: RuntimeException) {
+        null
     }
 
     override fun onAttachedToWindow() {

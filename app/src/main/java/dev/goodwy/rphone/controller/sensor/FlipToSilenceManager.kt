@@ -1,5 +1,6 @@
 package dev.goodwy.rphone.controller.sensor
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -87,14 +88,23 @@ class FlipToSilenceManager(private val context: Context) : SensorEventListener {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun triggerSilence() {
         stopListening()
 
-        // Silence the incoming call ringer
-        try {
-            telecomManager?.silenceRinger()
-        } catch (e: Exception) {
-            Log.e(TAG, "telecomManager.silenceRinger() failed: ${e.message}")
+        // TelecomManager permits this operation to the active default dialer. Keep the
+        // runtime role check next to the lint suppression so the privileged assumption is
+        // explicit and cannot silently spread to other call sites.
+        if (telecomManager?.defaultDialerPackage == context.packageName) {
+            try {
+                telecomManager.silenceRinger()
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Default dialer could not silence the ringer", e)
+            } catch (e: RuntimeException) {
+                Log.e(TAG, "Telecom failed to silence the ringer", e)
+            }
+        } else {
+            Log.w(TAG, "Ignoring flip-to-silence because the app is not the default dialer")
         }
 
         // Haptic feedback tick to confirm gesture

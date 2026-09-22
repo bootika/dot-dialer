@@ -16,6 +16,8 @@ import android.widget.Toast
 import dev.goodwy.rphone.R
 import dev.goodwy.rphone.controller.util.PreferenceManager
 import dev.goodwy.rphone.controller.util.toast
+import dev.goodwy.rphone.core.call.CallLifecycleCoordinator
+import dev.goodwy.rphone.core.call.CallLifecycleEvent
 import dev.goodwy.rphone.data.manager.CallStateManager
 import dev.goodwy.rphone.modal.`interface`.CallSession
 import dev.goodwy.rphone.modal.`interface`.ICallRepository
@@ -31,6 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
+import java.util.Collections
+import java.util.IdentityHashMap
 import kotlin.getValue
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -46,6 +50,10 @@ class CallService : InCallService() {
     private val callStartTimes = mutableMapOf<Call, Long>()
     private var lastFloatingCallMetadata: Triple<String, String, String?>? = null
     private var notificationUpdateJob: Job? = null
+    private val lifecycleCoordinator = CallLifecycleCoordinator()
+    private val callSessionIds = IdentityHashMap<Call, String>()
+    private val registeredCalls = Collections.newSetFromMap(IdentityHashMap<Call, Boolean>())
+    private var nextCallSessionId = 1L
 
     // BroadcastReceiver for monitoring when the screen is locked or turned off
     private val screenStateReceiver = object : BroadcastReceiver() {
@@ -106,6 +114,11 @@ class CallService : InCallService() {
 
         override fun onStateChanged(call: Call, state: Int) {
             super.onStateChanged(call, state)
+            callSessionIds[call]?.let { sessionId ->
+                lifecycleCoordinator.dispatch(
+                    CallLifecycleEvent.PhaseChanged(sessionId, telecomCallPhase(state))
+                )
+            }
             updateCallState()
 
             if (state == Call.STATE_ACTIVE) {
@@ -116,14 +129,6 @@ class CallService : InCallService() {
                 val cause = call.details.disconnectCause
                 handleDisconnect(call, cause)
 
-                val remaining = calls?.filter { it.state != Call.STATE_DISCONNECTED } ?: emptyList()
-                if (remaining.isEmpty()) {
-                    serviceScope.launch {
-                        delay(150.milliseconds)
-                        removeForeground()
-                        cancelNotification()
-                    }
-                }
             } else {
                 updateNotification(call)
             }
@@ -238,7 +243,16 @@ class CallService : InCallService() {
     }
 
     private fun updateCallState() {
-        val callsList = calls ?: emptyList()
+        val callsList = calls.orEmpty().filter { call ->
+            call in callSessionIds && call.state != Call.STATE_DISCONNECTED
+        }
+        lifecycleCoordinator.dispatch(
+            CallLifecycleEvent.Reconciled(
+                callsList.associate { call ->
+                    callSessionIds.getValue(call) to telecomCallPhase(call.state)
+                }
+            )
+        )
         callRepository.updateAllCalls(callsList)
 
         callsList.forEach { c ->
@@ -273,12 +287,8 @@ class CallService : InCallService() {
             val connectTime = callStartTimes[priorityCall] ?: 0L
             callRepository.updateCurrentCallSession(CallSession(priorityCall, priorityCall.state, connectTimeMillis = connectTime))
         } else {
-            val current = callRepository.currentCallSession.value
-            if (current != null && current.state != Call.STATE_DISCONNECTED) {
-                callRepository.updateCurrentCallSession(CallSession(current.call, Call.STATE_DISCONNECTED, connectTimeMillis = current.connectTimeMillis))
-            } else if (current == null) {
-                callRepository.updateCurrentCallSession(null)
-            }
+            callRepository.updateCurrentCallSession(null)
+            clearActiveCallSurfaces()
         }
     }
 
@@ -288,6 +298,15 @@ class CallService : InCallService() {
     }
 
     private fun updateNotification(call: Call, forcedHigh: Boolean? = null) {
+        val sessionId = callSessionIds[call] ?: return
+        if (!canPublishCallNotification(sessionId)) {
+            val surfaces = lifecycleCoordinator.state.value.surfaces
+            if (!surfaces.showIncomingNotification && !surfaces.showOngoingNotification) {
+                clearActiveCallSurfaces()
+            }
+            return
+        }
+
         notificationUpdateJob?.cancel()
         notificationUpdateJob = serviceScope.launch {
             val handle = call.details.handle
@@ -296,7 +315,7 @@ class CallService : InCallService() {
             val photoUri = getContactPhotoFromCache(number)
             val contactPhoto = notificationManager.getContactBitmap(photoUri)
 
-            if (!isActive) return@launch
+            if (!isActive || !canPublishCallNotification(sessionId)) return@launch
 
             val isHigh = forcedHigh ?: isDeviceLocked()
 
@@ -314,10 +333,28 @@ class CallService : InCallService() {
             )
 
             // Start/stop floating bubble based on preference
-            if (call.state != Call.STATE_DISCONNECTED && call.state != Call.STATE_DISCONNECTING) {
+            if (lifecycleCoordinator.state.value.surfaces.showFloatingUi) {
                 maybeStartFloatingCall(contactName, number, photoUri)
+            } else {
+                FloatingCallService.stop(this@CallService)
             }
         }
+    }
+
+    private fun canPublishCallNotification(sessionId: String): Boolean {
+        val lifecycle = lifecycleCoordinator.state.value
+        val surfaces = lifecycle.surfaces
+        return lifecycle.foregroundSessionId == sessionId &&
+            (surfaces.showIncomingNotification || surfaces.showOngoingNotification)
+    }
+
+    private fun clearActiveCallSurfaces() {
+        notificationUpdateJob?.cancel()
+        notificationUpdateJob = null
+        removeForeground()
+        cancelNotification()
+        FloatingCallService.stop(this)
+        lastFloatingCallMetadata = null
     }
 
     private fun removeForeground() {
@@ -340,7 +377,6 @@ class CallService : InCallService() {
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
         redialCount = 0
-        call.registerCallback(callCallback)
 
         val number = call.details.handle?.schemeSpecificPart?.let { Uri.decode(it) } ?: ""
         val cnam = if (call.details.callerDisplayNamePresentation == TelecomManager.PRESENTATION_ALLOWED) {
@@ -351,6 +387,13 @@ class CallService : InCallService() {
 
         // ── USSD / MMI outgoing calls ────────────────────────────────────────
         val isUssd = call.state != Call.STATE_RINGING && isUssdNumber(number)
+        if (!isUssd) {
+            val sessionId = sessionIdFor(call)
+            lifecycleCoordinator.dispatch(
+                CallLifecycleEvent.CallAdded(sessionId, telecomCallPhase(call.state))
+            )
+        }
+        registerCallCallback(call)
         if (isUssd) return
         // ────────────────────────────────────────────────────────────────────
 
@@ -380,7 +423,10 @@ class CallService : InCallService() {
 
     override fun onCallRemoved(call: Call) {
         super.onCallRemoved(call)
-        call.unregisterCallback(callCallback)
+        unregisterCallCallback(call)
+        callSessionIds.remove(call)?.let { sessionId ->
+            lifecycleCoordinator.dispatch(CallLifecycleEvent.CallRemoved(sessionId))
+        }
 
         // If the call being deleted is the same one for which a floating window was launched,
         // we must clear the cache to allow it to be launched for the next call.
@@ -393,15 +439,7 @@ class CallService : InCallService() {
         callStateManager.onCallEnded(number)
         updateCallState()
 
-        val callsList = callRepository.allCalls.value
-        if (callsList.isEmpty()) {
-            serviceScope.launch {
-                delay(100.milliseconds)
-                callRepository.updateCurrentCallSession(null)
-                removeForeground()
-                cancelNotification()
-            }
-        } else {
+        if (callRepository.allCalls.value.isNotEmpty()) {
             callRepository.currentCallSession.value?.call?.let { updateNotification(it) }
         }
     }
@@ -454,14 +492,40 @@ class CallService : InCallService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-
         try {
             unregisterReceiver(screenStateReceiver)
         } catch (_: Exception) {}
 
+        registeredCalls.toList().forEach(::unregisterCallCallback)
+        lifecycleCoordinator.dispatch(CallLifecycleEvent.ServiceStopped)
+        callSessionIds.clear()
+        callStartTimes.clear()
+        callRepository.updateAllCalls(emptyList())
+        callRepository.updateCurrentCallSession(null)
+        callRepository.updateAudioState(null)
+        callRepository.setPreferredCall(null)
+        clearActiveCallSurfaces()
         (callRepository as? CallRepositoryImpl)?.unbindService()
         serviceScope.cancel()
+        super.onDestroy()
+    }
+
+    private fun sessionIdFor(call: Call): String = callSessionIds[call] ?: run {
+        val id = "call-${nextCallSessionId++}"
+        callSessionIds[call] = id
+        id
+    }
+
+    private fun registerCallCallback(call: Call) {
+        if (registeredCalls.add(call)) {
+            call.registerCallback(callCallback)
+        }
+    }
+
+    private fun unregisterCallCallback(call: Call) {
+        if (registeredCalls.remove(call)) {
+            runCatching { call.unregisterCallback(callCallback) }
+        }
     }
 
     private fun maybeStartFloatingCall(contactName: String, number: String, photoUri: String?) {

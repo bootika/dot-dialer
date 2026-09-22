@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [PrivateContactEntity::class], version = 3, exportSchema = false)
+@Database(entities = [PrivateContactEntity::class], version = 3, exportSchema = true)
 abstract class RillDatabase : RoomDatabase() {
     abstract fun privateContactDao(): PrivateContactDao
 

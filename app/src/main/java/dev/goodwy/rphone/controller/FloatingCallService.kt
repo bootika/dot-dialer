@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.telecom.CallAudioState
+import android.telecom.Call
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -726,7 +727,15 @@ class FloatingCallService : Service() {
 
     private fun observeAll() {
         scope.launch {
-            callRepository.currentCallSession.collect { if (it == null) { removeBubble(); stopSelf() } }
+            callRepository.currentCallSession.collect { session ->
+                if (session == null ||
+                    session.state == Call.STATE_DISCONNECTED ||
+                    session.state == Call.STATE_DISCONNECTING
+                ) {
+                    removeBubble()
+                    stopSelf()
+                }
+            }
         }
         scope.launch {
             CallActivity.isInForeground.collect { inForeground ->
