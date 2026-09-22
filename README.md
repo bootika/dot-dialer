@@ -25,7 +25,8 @@ Requirements: JDK 17 and an Android SDK containing platform 37.0.
 ./gradlew qualityGate
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [testing](docs/TESTING.md) and
+See [architecture](docs/ARCHITECTURE.md), [testing](docs/TESTING.md),
+[test APK and diagnostics](docs/TEST_APK.md), and
 [accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md).
 
 ## Upstream and license

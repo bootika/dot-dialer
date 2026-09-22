@@ -18,6 +18,10 @@ import dev.goodwy.rphone.controller.util.PreferenceManager
 import dev.goodwy.rphone.controller.util.toast
 import io.github.bootika.dotdialer.core.call.CallLifecycleCoordinator
 import io.github.bootika.dotdialer.core.call.CallLifecycleEvent
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticComponent
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticOperation
+import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
 import dev.goodwy.rphone.data.manager.CallStateManager
 import dev.goodwy.rphone.modal.`interface`.CallSession
 import dev.goodwy.rphone.modal.`interface`.ICallRepository
@@ -54,6 +58,7 @@ class CallService : InCallService() {
     private val callSessionIds = IdentityHashMap<Call, String>()
     private val registeredCalls = Collections.newSetFromMap(IdentityHashMap<Call, Boolean>())
     private var nextCallSessionId = 1L
+    private var lastDiagnosticLifecycleSummary: String? = null
 
     // BroadcastReceiver for monitoring when the screen is locked or turned off
     private val screenStateReceiver = object : BroadcastReceiver() {
@@ -72,6 +77,7 @@ class CallService : InCallService() {
 
     override fun onCreate() {
         super.onCreate()
+        AppDiagnostics.record(DiagnosticEvent.CallServiceStarted)
         (callRepository as? CallRepositoryImpl)?.bindService(this)
 
         // Register the receiver to track screen locks
@@ -115,8 +121,15 @@ class CallService : InCallService() {
         override fun onStateChanged(call: Call, state: Int) {
             super.onStateChanged(call, state)
             callSessionIds[call]?.let { sessionId ->
+                val phase = telecomCallPhase(state)
                 lifecycleCoordinator.dispatch(
-                    CallLifecycleEvent.PhaseChanged(sessionId, telecomCallPhase(state))
+                    CallLifecycleEvent.PhaseChanged(sessionId, phase)
+                )
+                AppDiagnostics.record(
+                    DiagnosticEvent.CallPhaseChanged(
+                        sessionId = sessionId,
+                        phase = phase.name,
+                    )
                 )
             }
             updateCallState()
@@ -253,6 +266,28 @@ class CallService : InCallService() {
                 }
             )
         )
+        val lifecycleState = lifecycleCoordinator.state.value
+        val surfaces = lifecycleState.surfaces
+        val diagnosticSummary = listOf(
+            callsList.size,
+            lifecycleState.foregroundSession?.phase,
+            surfaces.showCallUi,
+            surfaces.showIncomingNotification,
+            surfaces.showOngoingNotification,
+            surfaces.showFloatingUi,
+        ).joinToString(separator = ":")
+        if (diagnosticSummary != lastDiagnosticLifecycleSummary) {
+            lastDiagnosticLifecycleSummary = diagnosticSummary
+            AppDiagnostics.record(
+                DiagnosticEvent.CallsReconciled(
+                    activeCallCount = callsList.size,
+                    foregroundPhase = lifecycleState.foregroundSession?.phase?.name,
+                    showCallUi = surfaces.showCallUi,
+                    showNotification = surfaces.showIncomingNotification || surfaces.showOngoingNotification,
+                    showFloatingUi = surfaces.showFloatingUi,
+                )
+            )
+        }
         callRepository.updateAllCalls(callsList)
 
         callsList.forEach { c ->
@@ -389,8 +424,16 @@ class CallService : InCallService() {
         val isUssd = call.state != Call.STATE_RINGING && isUssdNumber(number)
         if (!isUssd) {
             val sessionId = sessionIdFor(call)
+            val initialPhase = telecomCallPhase(call.state)
             lifecycleCoordinator.dispatch(
-                CallLifecycleEvent.CallAdded(sessionId, telecomCallPhase(call.state))
+                CallLifecycleEvent.CallAdded(sessionId, initialPhase)
+            )
+            AppDiagnostics.record(
+                DiagnosticEvent.CallAdded(
+                    sessionId = sessionId,
+                    phase = initialPhase.name,
+                    activeCallCount = callSessionIds.size,
+                )
             )
         }
         registerCallCallback(call)
@@ -415,7 +458,14 @@ class CallService : InCallService() {
                 }
                 try {
                     startActivity(intent)
-                } catch (_: Exception) {
+                } catch (error: Exception) {
+                    AppDiagnostics.record(
+                        DiagnosticEvent.Failure(
+                            component = DiagnosticComponent.CALL_SERVICE,
+                            operation = DiagnosticOperation.START_ACTIVITY,
+                            errorType = error.javaClass.simpleName,
+                        )
+                    )
                 }
             }
         }
@@ -426,6 +476,12 @@ class CallService : InCallService() {
         unregisterCallCallback(call)
         callSessionIds.remove(call)?.let { sessionId ->
             lifecycleCoordinator.dispatch(CallLifecycleEvent.CallRemoved(sessionId))
+            AppDiagnostics.record(
+                DiagnosticEvent.CallRemoved(
+                    sessionId = sessionId,
+                    remainingCallCount = callSessionIds.size,
+                )
+            )
         }
 
         // If the call being deleted is the same one for which a floating window was launched,
@@ -492,9 +548,18 @@ class CallService : InCallService() {
     }
 
     override fun onDestroy() {
+        AppDiagnostics.record(DiagnosticEvent.CallServiceStopped(callSessionIds.size))
         try {
             unregisterReceiver(screenStateReceiver)
-        } catch (_: Exception) {}
+        } catch (error: Exception) {
+            AppDiagnostics.record(
+                DiagnosticEvent.Failure(
+                    component = DiagnosticComponent.CALL_SERVICE,
+                    operation = DiagnosticOperation.UNREGISTER_RECEIVER,
+                    errorType = error.javaClass.simpleName,
+                )
+            )
+        }
 
         registeredCalls.toList().forEach(::unregisterCallCallback)
         lifecycleCoordinator.dispatch(CallLifecycleEvent.ServiceStopped)

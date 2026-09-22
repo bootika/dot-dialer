@@ -11,10 +11,12 @@ tasks.register('qualityGate') {
     description = 'Runs every check required before a Dot Dialer change can be merged.'
 
     dependsOn(
+        ':core:diagnostics:test',
         ':core:domain:test',
         ':app:compileFossDebugKotlin',
         ':app:testFossDebugUnitTest',
         ':app:compileFossDebugAndroidTestKotlin',
         ':app:lintFossDebug',
+        ':app:assembleFossDebug',
     )
 }

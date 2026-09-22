@@ -959,6 +959,15 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
                                     }
                                 )
                                 RillListItem(
+                                    headline = stringResource(R.string.diagnostics),
+                                    supporting = stringResource(R.string.diagnostics_subtitle),
+                                    leadingIcon = Icons.Default.BugReport,
+                                    iconContainerColor = MaterialTheme.colorScheme.customColors.colorDarkPurple,
+                                    iconBgContainerColor = MaterialTheme.colorScheme.customColors.colorPurple,
+                                    trailingIcon = Icons.Default.ChevronRight,
+                                    onClick = { navigator.navigate(DiagnosticsScreenDestination) },
+                                )
+                                RillListItem(
                                     headline = stringResource(R.string.about),
                                     supporting = "Version $appVersion ($storeName)",
                                     leadingIcon = Icons.Outlined.Info,

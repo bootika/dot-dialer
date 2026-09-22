@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">Rill Phone</string>
+    <string name="app_name" translatable="false">Dot Dialer</string>
     <string name="call_screen_sim_label" translatable="false">SIM %1$s</string>
     <string name="label_unknown" translatable="false">Unknown</string>
 
@@ -569,8 +569,8 @@
     <string name="set_as_default">Set as default</string>
     <string name="clear_default">Clear default</string>
     <string name="default_phone_set">%s set as default</string>
-    <string name="default_dialer_title">Set Rill Phone as default</string>
-    <string name="default_dialer_subtitle">Rill Phone can only start &amp; receive calls if it\'s your default phone app</string>
+    <string name="default_dialer_title">Set Dot Dialer as default</string>
+    <string name="default_dialer_subtitle">Dot Dialer can only start &amp; receive calls if it\'s your default phone app</string>
     <string name="default_dialer_warning">The app cannot function without this permission. Please try again.</string>
 
     <!-- Call notes -->
@@ -661,4 +661,16 @@
     <string name="pocket_mode_active">Pocket Mode Active</string>
     <string name="pocket_mode_active_description">Screen touches are locked to prevent accidental touches in your pocket.</string>
     <string name="pocket_mode_dismiss">Dismiss Touch Guard</string>
+
+    <!-- Diagnostics: English fallback for the foundation build; full localization is required before release. -->
+    <string name="diagnostics" tools:ignore="MissingTranslation">Diagnostics</string>
+    <string name="diagnostics_subtitle" tools:ignore="MissingTranslation">Copy a privacy-safe technical report for troubleshooting</string>
+    <string name="diagnostics_privacy_notice" tools:ignore="MissingTranslation">Phone numbers, contact names, notes and exception messages are never included. Review the report before sharing it.</string>
+    <string name="copy_diagnostics" tools:ignore="MissingTranslation">Copy diagnostics</string>
+    <string name="diagnostics_copied" tools:ignore="MissingTranslation">Diagnostics copied to clipboard</string>
+    <string name="refresh" tools:ignore="MissingTranslation">Refresh</string>
+    <string name="clear_diagnostics" tools:ignore="MissingTranslation">Clear log</string>
+    <string name="clear_diagnostics_title" tools:ignore="MissingTranslation">Clear diagnostic log?</string>
+    <string name="clear_diagnostics_message" tools:ignore="MissingTranslation">This removes the locally stored diagnostic events. It does not change contacts, calls or settings.</string>
+    <string name="diagnostics_loading" tools:ignore="MissingTranslation">Loading diagnostics…</string>
 </resources>

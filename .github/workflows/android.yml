@@ -47,5 +47,15 @@ jobs:
             app/build/test-results/
             app/build/reports/lint-results-*.html
             app/build/reports/lint-results-*.xml
+            core/diagnostics/build/reports/tests/
+            core/diagnostics/build/test-results/
             core/domain/build/reports/tests/
             core/domain/build/test-results/
+
+      - name: Upload installable test APK
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dot-dialer-test-apk
+          if-no-files-found: error
+          path: app/build/outputs/apk/foss/debug/*.apk

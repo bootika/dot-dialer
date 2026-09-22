@@ -22,7 +22,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "dev.goodwy.rphone"
+        applicationId = "io.github.bootika.dotdialer"
         minSdk = 29
         targetSdk = 37
         versionCode = 52
@@ -37,7 +37,7 @@ android {
     }
 
     base {
-        archivesName = "rill-phone-${defaultConfig.versionCode}"
+        archivesName = "dot-dialer-${defaultConfig.versionCode}"
     }
 
     signingConfigs {
@@ -60,6 +60,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
+            applicationIdSuffix = ".test"
+            versionNameSuffix = "-test"
         }
     }
 
@@ -109,6 +111,7 @@ ksp {
 }
 
 dependencies {
+    implementation project(':core:diagnostics')
     implementation project(':core:domain')
 
     // UI Stack managed by BOM

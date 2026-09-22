@@ -16,6 +16,7 @@ On Windows use `gradlew.bat` and the same task names.
 ## Test layers
 
 - `core/domain/src/test`: fast JVM tests for call lifecycle, haptic policy and future domain rules.
+- `core/diagnostics/src/test`: privacy, sanitization and size-limit tests for support logs.
 - `app/src/test`: JVM tests for legacy code while it is migrated and Android-aware integration code.
 - `app/src/androidTest`: Compose semantics, accessibility, Android integration and UI flows.
 - Future `macrobenchmark` module: startup and end-user performance scenarios.
@@ -34,12 +35,14 @@ On Windows use `gradlew.bat` and the same task names.
 
 ## Reports
 
-JUnit and lint reports are generated below `app/build` and `core/domain/build`.
+JUnit and lint reports are generated below `app/build`, `core/domain/build` and
+`core/diagnostics/build`.
 CI uploads these directories even when the quality gate fails.
 
 ## Current verified baseline
 
-The foundation currently has 16 pure Kotlin/JVM tests covering call lifecycle and haptic policy,
-plus one instrumented Compose accessibility test. The instrumented test has been executed on Android
-API 36. Real carrier calls, multi-SIM behavior, Bluetooth routing and OEM-specific Telecom behavior
-still require the external device harness and physical-device coverage described above.
+The exact test count is reported by Gradle and CI rather than duplicated here. The current suite
+covers call lifecycle, haptic policy, diagnostic-log privacy and one instrumented Compose
+accessibility scenario. The instrumented test has been executed on Android API 36. Real carrier
+calls, multi-SIM behavior, Bluetooth routing and OEM-specific Telecom behavior still require the
+external device harness and physical-device coverage described above.

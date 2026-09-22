@@ -113,6 +113,9 @@ import dev.goodwy.rphone.view.theme.color_call_button
 import dev.goodwy.rphone.view.theme.isLandscapeMode
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.context.GlobalContext
+import io.github.bootika.dotdialer.core.diagnostics.ActivityStage
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
+import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
 
 class MainActivity : FragmentActivity() {
     private var intentState by mutableStateOf<Intent?>(null)
@@ -124,6 +127,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        AppDiagnostics.record(DiagnosticEvent.ActivityLifecycle(ActivityStage.CREATED))
         intentState = intent
         // enableEdgeToEdge() triggers Adreno GPU driver SIGSEGV on first RenderThread draw.
         // Edge-to-edge is set via theme XML instead (windowDrawsSystemBarBackgrounds etc.).
@@ -639,6 +643,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
+        AppDiagnostics.record(DiagnosticEvent.ActivityLifecycle(ActivityStage.RESUMED))
         AppLockManager.onAppForegrounded(prefs)
         if (AppLockManager.isLocked(prefs)) {
             isAppLocked = true
@@ -646,17 +651,34 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onStop() {
+        AppDiagnostics.record(
+            DiagnosticEvent.ActivityLifecycle(
+                stage = ActivityStage.STOPPED,
+                changingConfiguration = isChangingConfigurations,
+            )
+        )
         super.onStop()
         AppLockManager.onAppBackgrounded()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        AppDiagnostics.record(DiagnosticEvent.ActivityLifecycle(ActivityStage.NEW_INTENT))
         setIntent(intent)
         intentState = intent
 
         val purchaseHelper: PurchaseHelper = GlobalContext.get().get()
         purchaseHelper.handleNewIntent(intent, this)
+    }
+
+    override fun onDestroy() {
+        AppDiagnostics.record(
+            DiagnosticEvent.ActivityLifecycle(
+                stage = ActivityStage.DESTROYED,
+                changingConfiguration = isChangingConfigurations,
+            )
+        )
+        super.onDestroy()
     }
 
     private fun handleIntent(intent: Intent?, navController: androidx.navigation.NavController) {
