@@ -19,7 +19,7 @@ accessibility and restrained, system-consistent haptics.
 
 ## Build and verify
 
-Requirements: JDK 17 and an Android SDK containing platform 37.
+Requirements: JDK 17 and an Android SDK containing platform 37.0.
 
 ```shell
 ./gradlew :app:compileFossDebugKotlin \
