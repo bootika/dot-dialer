@@ -16,8 +16,8 @@ import android.widget.Toast
 import dev.goodwy.rphone.R
 import dev.goodwy.rphone.controller.util.PreferenceManager
 import dev.goodwy.rphone.controller.util.toast
-import dev.goodwy.rphone.core.call.CallLifecycleCoordinator
-import dev.goodwy.rphone.core.call.CallLifecycleEvent
+import io.github.bootika.dotdialer.core.call.CallLifecycleCoordinator
+import io.github.bootika.dotdialer.core.call.CallLifecycleEvent
 import dev.goodwy.rphone.data.manager.CallStateManager
 import dev.goodwy.rphone.modal.`interface`.CallSession
 import dev.goodwy.rphone.modal.`interface`.ICallRepository

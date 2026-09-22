@@ -1,7 +1,7 @@
 package dev.goodwy.rphone.controller
 
 import android.telecom.Call
-import dev.goodwy.rphone.core.call.CallPhase
+import io.github.bootika.dotdialer.core.call.CallPhase
 
 internal fun telecomCallPhase(state: Int): CallPhase = when (state) {
     Call.STATE_RINGING -> CallPhase.RINGING

@@ -21,5 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RPhone"
+rootProject.name = "DotDialer"
 include ':app'
+include ':core:domain'

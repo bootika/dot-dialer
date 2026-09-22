@@ -9,9 +9,9 @@ import android.provider.Settings
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
-import dev.goodwy.rphone.core.haptics.HapticIntent
-import dev.goodwy.rphone.core.haptics.HapticPolicy
-import dev.goodwy.rphone.core.haptics.HapticStrength
+import io.github.bootika.dotdialer.core.haptics.HapticIntent
+import io.github.bootika.dotdialer.core.haptics.HapticPolicy
+import io.github.bootika.dotdialer.core.haptics.HapticStrength
 
 /**
  * Single Android boundary for app haptics.

@@ -22,13 +22,11 @@ accessibility and restrained, system-consistent haptics.
 Requirements: JDK 17 and an Android SDK containing platform 37.0.
 
 ```shell
-./gradlew :app:compileFossDebugKotlin \
-  :app:testFossDebugUnitTest \
-  :app:compileFossDebugAndroidTestKotlin \
-  :app:lintFossDebug
+./gradlew qualityGate
 ```
 
-See [testing](docs/TESTING.md) and [accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md).
+See [architecture](docs/ARCHITECTURE.md), [testing](docs/TESTING.md) and
+[accessibility and haptics](docs/ACCESSIBILITY_AND_HAPTICS.md).
 
 ## Upstream and license
 

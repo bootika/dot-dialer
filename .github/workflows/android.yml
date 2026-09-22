@@ -34,7 +34,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Verify foundation
-        run: ./gradlew --no-daemon :app:compileFossDebugKotlin :app:testFossDebugUnitTest :app:compileFossDebugAndroidTestKotlin :app:lintFossDebug
+        run: ./gradlew --no-daemon qualityGate
 
       - name: Upload test and lint reports
         if: always()
@@ -47,3 +47,5 @@ jobs:
             app/build/test-results/
             app/build/reports/lint-results-*.html
             app/build/reports/lint-results-*.xml
+            core/domain/build/reports/tests/
+            core/domain/build/test-results/

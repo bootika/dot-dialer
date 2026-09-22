@@ -1,4 +1,4 @@
-package dev.goodwy.rphone.core.haptics
+package io.github.bootika.dotdialer.core.haptics
 
 enum class HapticStrength {
     LIGHT,

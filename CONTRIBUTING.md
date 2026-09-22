@@ -12,5 +12,9 @@ accessibility and testing rules of the project.
 4. Describe what was verified and what still needs physical-device testing.
 5. Preserve upstream copyright and GPL notices.
 
+New code must follow [the architecture contract](docs/ARCHITECTURE.md). In particular, do not add
+business logic to composables or Android services, do not expose Android framework types from domain
+APIs, and do not create generic helper modules as dumping grounds.
+
 Do not include real phone numbers, contacts, call logs, credentials or other personal data in test
 fixtures, screenshots, logs or issue reports.

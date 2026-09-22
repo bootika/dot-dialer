@@ -8,17 +8,15 @@ tests is not a valid verification result.
 Set `ANDROID_HOME` or create `local.properties` with `sdk.dir`, then run:
 
 ```shell
-./gradlew :app:compileFossDebugKotlin \
-  :app:testFossDebugUnitTest \
-  :app:compileFossDebugAndroidTestKotlin \
-  :app:lintFossDebug
+./gradlew qualityGate
 ```
 
 On Windows use `gradlew.bat` and the same task names.
 
 ## Test layers
 
-- `app/src/test`: fast JVM tests for call lifecycle, haptic policy, search, backup and domain rules.
+- `core/domain/src/test`: fast JVM tests for call lifecycle, haptic policy and future domain rules.
+- `app/src/test`: JVM tests for legacy code while it is migrated and Android-aware integration code.
 - `app/src/androidTest`: Compose semantics, accessibility, Android integration and UI flows.
 - Future `macrobenchmark` module: startup and end-user performance scenarios.
 - Future external device harness: force-stop, process death, permission changes and Telecom flows.
@@ -36,12 +34,12 @@ On Windows use `gradlew.bat` and the same task names.
 
 ## Reports
 
-JUnit and lint reports are generated below `app/build/reports` and `app/build/test-results`.
+JUnit and lint reports are generated below `app/build` and `core/domain/build`.
 CI uploads these directories even when the quality gate fails.
 
 ## Current verified baseline
 
-The foundation currently has 16 JVM tests covering call lifecycle and haptic policy, plus one
-instrumented Compose accessibility test. The instrumented test has been executed on Android API
-36. Real carrier calls, multi-SIM behavior, Bluetooth routing and OEM-specific Telecom behavior
+The foundation currently has 16 pure Kotlin/JVM tests covering call lifecycle and haptic policy,
+plus one instrumented Compose accessibility test. The instrumented test has been executed on Android
+API 36. Real carrier calls, multi-SIM behavior, Bluetooth routing and OEM-specific Telecom behavior
 still require the external device harness and physical-device coverage described above.

@@ -38,7 +38,7 @@ import dev.goodwy.rphone.R
 import dev.goodwy.rphone.controller.util.CallBackgroundStore
 import dev.goodwy.rphone.controller.util.AndroidHaptics
 import dev.goodwy.rphone.controller.util.PreferenceManager
-import dev.goodwy.rphone.core.haptics.HapticIntent
+import io.github.bootika.dotdialer.core.haptics.HapticIntent
 import dev.goodwy.rphone.liquidglass.LocalLiquidGlassBackdrop
 import dev.goodwy.rphone.liquidglass.backdrops.rememberLayerBackdrop
 import dev.goodwy.rphone.modal.`interface`.CallSession

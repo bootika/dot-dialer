@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.goodwy.rphone.controller.util.PreferenceManager
 import dev.goodwy.rphone.controller.util.AndroidHaptics
-import dev.goodwy.rphone.core.haptics.HapticIntent
+import io.github.bootika.dotdialer.core.haptics.HapticIntent
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import androidx.compose.ui.graphics.graphicsLayer

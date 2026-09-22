@@ -1,4 +1,4 @@
-package dev.goodwy.rphone.core.call
+package io.github.bootika.dotdialer.core.call
 
 /**
  * Framework-independent call lifecycle model.
