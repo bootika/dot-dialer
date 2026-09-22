@@ -2,6 +2,8 @@ package dev.goodwy.rphone.view.screen.settings
 
 import android.app.Activity
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -72,13 +74,16 @@ import dev.goodwy.rphone.controller.util.UpdateDialogState
 import dev.goodwy.rphone.controller.util.UpdateDialogs
 import dev.goodwy.rphone.controller.util.getAppVersion
 import dev.goodwy.rphone.controller.util.performUpdateCheck
+import dev.goodwy.rphone.controller.util.toast
 import dev.goodwy.rphone.view.components.NavigationIcon
 import dev.goodwy.rphone.view.components.RillAnimatedSection
 import dev.goodwy.rphone.view.components.RillExpressiveCard
+import dev.goodwy.rphone.view.components.RillIconButton
 import dev.goodwy.rphone.view.components.RillListItem
 import dev.goodwy.rphone.view.components.RillSwitchListItem
 import dev.goodwy.rphone.view.components.ScrollHapticsEffect
 import dev.goodwy.rphone.view.components.SupportProjectItem
+import dev.goodwy.rphone.view.components.performAppHaptic
 import dev.goodwy.rphone.view.theme.customColors
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -97,6 +102,7 @@ import dev.goodwy.rphone.view.components.Title
 import dev.goodwy.rphone.view.theme.MyColors.cardColor
 import dev.goodwy.rphone.view.theme.RillShapeDefaults
 import dev.goodwy.rphone.view.theme.TabTransitionStyle
+import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -139,6 +145,35 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
 
     var updateDialogState by remember { mutableStateOf<UpdateDialogState>(UpdateDialogState.Idle) }
     var backupState       by remember { mutableStateOf<BackupDialogState>(BackupDialogState.Idle) }
+    var isCopyingDiagnostics by remember { mutableStateOf(false) }
+
+    val diagnosticsCopiedText = stringResource(R.string.diagnostics_copied)
+    val diagnosticsCopyFailedText = stringResource(R.string.diagnostics_copy_failed)
+    val copyDiagnosticsDescription = stringResource(R.string.copy_diagnostics)
+
+    fun copyDiagnostics() {
+        if (isCopyingDiagnostics) return
+        if (prefs.getBoolean(PreferenceManager.KEY_APP_HAPTICS, true)) {
+            performAppHaptic(
+                context = context,
+                strength = prefs.getString(PreferenceManager.KEY_APP_HAPTICS_STRENGTH, "light") ?: "light",
+                customIntensity = prefs.getFloat(PreferenceManager.KEY_HAPTICS_CUSTOM_INTENSITY, 0.5f),
+            )
+        }
+        isCopyingDiagnostics = true
+        scope.launch {
+            try {
+                val report = AppDiagnostics.report(context)
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Dot Dialer diagnostics", report))
+                context.toast(diagnosticsCopiedText)
+            } catch (_: Exception) {
+                context.toast(diagnosticsCopyFailedText)
+            } finally {
+                isCopyingDiagnostics = false
+            }
+        }
+    }
 
     var visible by remember { mutableStateOf(false) }
     var isClosing by remember { mutableStateOf(false) }
@@ -966,6 +1001,25 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
                                     iconBgContainerColor = MaterialTheme.colorScheme.customColors.colorPurple,
                                     trailingIcon = Icons.Default.ChevronRight,
                                     onClick = { navigator.navigate(DiagnosticsScreenDestination) },
+                                    trailingContent = {
+                                        Box(
+                                            modifier = Modifier.size(48.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            if (isCopyingDiagnostics) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(24.dp),
+                                                    strokeWidth = 2.dp,
+                                                )
+                                            } else {
+                                                RillIconButton(
+                                                    onClick = ::copyDiagnostics,
+                                                    imageVector = Icons.Default.ContentCopy,
+                                                    contentDescription = copyDiagnosticsDescription,
+                                                )
+                                            }
+                                        }
+                                    },
                                 )
                                 RillListItem(
                                     headline = stringResource(R.string.about),

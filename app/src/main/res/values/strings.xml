@@ -670,6 +670,7 @@
     <string name="diagnostics_privacy_notice" tools:ignore="MissingTranslation">Phone numbers, contact names, notes and exception messages are never included. Review the report before sharing it.</string>
     <string name="copy_diagnostics" tools:ignore="MissingTranslation">Copy diagnostics</string>
     <string name="diagnostics_copied" tools:ignore="MissingTranslation">Diagnostics copied to clipboard</string>
+    <string name="diagnostics_copy_failed" tools:ignore="MissingTranslation">Could not copy diagnostics</string>
     <string name="refresh" tools:ignore="MissingTranslation">Refresh</string>
     <string name="clear_diagnostics" tools:ignore="MissingTranslation">Clear log</string>
     <string name="clear_diagnostics_title" tools:ignore="MissingTranslation">Clear diagnostic log?</string>

@@ -27,8 +27,8 @@ android {
         applicationId = "io.github.bootika.dotdialer"
         minSdk = 29
         targetSdk = 37
-        versionCode = 57
-        versionName = "0.5.7"
+        versionCode = 58
+        versionName = "0.5.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
