@@ -681,4 +681,8 @@
     <string name="send_sentry_test" tools:ignore="MissingTranslation">Send Sentry test event</string>
     <string name="sentry_test_sent" tools:ignore="MissingTranslation">Sentry test event sent: %1$s</string>
     <string name="sentry_test_failed" tools:ignore="MissingTranslation">Sentry is not available in this build</string>
+    <string name="show_recents_filter_chips" tools:ignore="MissingTranslation">Show filter chips</string>
+    <string name="show_recents_filter_chips_subtitle" tools:ignore="MissingTranslation">Show All, Missed, Incoming, and Outgoing filters at the top</string>
+    <string name="show_recents_favorites" tools:ignore="MissingTranslation">Show Favorites section</string>
+    <string name="show_recents_favorites_subtitle" tools:ignore="MissingTranslation">Show favorite contacts above recent calls when the Favorites tab is hidden</string>
 </resources>

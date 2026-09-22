@@ -30,6 +30,12 @@ class DotDialerPreferenceDefaultsTest {
     }
 
     @Test
+    fun `keeps both optional Recents sections visible by default`() {
+        assertEquals(true, DotDialerPreferenceDefaults.booleanFor("show_recents_filter_chips"))
+        assertEquals(true, DotDialerPreferenceDefaults.booleanFor("show_recents_favorites"))
+    }
+
+    @Test
     fun `does not turn personal runtime state into product defaults`() {
         listOf(
             "favorites_order",

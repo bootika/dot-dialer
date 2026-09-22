@@ -147,6 +147,8 @@ fun InterfaceScreen(navigator: DestinationsNavigator) {
     var scrollAnimation     by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_SCROLL_ANIMATION, false)) }
     var dialpadAnimation    by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_DIALPAD_ANIMATION, true)) }
     var swipeToCall         by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_SWIPE_TO_CALL, true)) }
+    var showRecentsFilterChips by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_SHOW_RECENTS_FILTER_CHIPS, true)) }
+    var showRecentsFavorites by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_SHOW_RECENTS_FAVORITES, true)) }
     var hideVoiceSearch     by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_HIDE_VOICE_SEARCH, false)) }
     var liquidGlass         by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_LIQUID_GLASS, false)) }
     var blurEffects         by remember(settingsState) { mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_BLUR_EFFECTS, false)) }
@@ -820,6 +822,41 @@ fun InterfaceScreen(navigator: DestinationsNavigator) {
                                     onCheckedChange = {
                                         dialpadAnimation = it
                                         prefs.setBoolean(PreferenceManager.KEY_DIALPAD_ANIMATION, it)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ── Recents ───────────────────────────────────────────
+                item {
+                    RillAnimatedSection(delayMs = 100L) {
+                        Column {
+                            SettingsSectionLabel(stringResource(R.string.recents))
+                            RillExpressiveCard {
+                                RillSwitchListItem(
+                                    headline = stringResource(R.string.show_recents_filter_chips),
+                                    supporting = stringResource(R.string.show_recents_filter_chips_subtitle),
+                                    leadingIcon = Icons.Outlined.FilterAlt,
+                                    iconContainerColor = MaterialTheme.colorScheme.customColors.colorDarkCyan,
+                                    iconBgContainerColor = MaterialTheme.colorScheme.customColors.colorCyan,
+                                    checked = showRecentsFilterChips,
+                                    onCheckedChange = {
+                                        showRecentsFilterChips = it
+                                        prefs.setBoolean(PreferenceManager.KEY_SHOW_RECENTS_FILTER_CHIPS, it)
+                                    }
+                                )
+                                RillSwitchListItem(
+                                    headline = stringResource(R.string.show_recents_favorites),
+                                    supporting = stringResource(R.string.show_recents_favorites_subtitle),
+                                    leadingIcon = Icons.Outlined.StarOutline,
+                                    iconContainerColor = MaterialTheme.colorScheme.customColors.colorDarkAmber,
+                                    iconBgContainerColor = MaterialTheme.colorScheme.customColors.colorAmber,
+                                    checked = showRecentsFavorites,
+                                    onCheckedChange = {
+                                        showRecentsFavorites = it
+                                        prefs.setBoolean(PreferenceManager.KEY_SHOW_RECENTS_FAVORITES, it)
                                     }
                                 )
                             }

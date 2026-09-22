@@ -427,6 +427,8 @@ class PreferenceManager(context: Context) {
         const val KEY_BOTTOM_NAV_HIDDEN = "bottom_nav_hidden"
         const val KEY_MERGE_FAVORITES_RECENTS = "merge_favorites_recents"
         const val KEY_RECENTS_FAVORITES_COLLAPSED = "recents_favorites_collapsed"
+        const val KEY_SHOW_RECENTS_FILTER_CHIPS = "show_recents_filter_chips"
+        const val KEY_SHOW_RECENTS_FAVORITES = "show_recents_favorites"
         const val KEY_IS_SUPPORTER = "is_supporter"
         const val KEY_POST_CALL_SCREEN = "post_call_screen"
         const val KEY_NAV_BAR_STYLE = "nav_bar_style"

@@ -110,7 +110,11 @@ fun RecentScreen(navController: NavController, navigator: DestinationsNavigator)
 
     val notificationManager = koinInject<CallNotificationManager>()
     val prefs = koinInject<PreferenceManager>()
+    val settingsState by prefs.settingsChanged.collectAsStateWithLifecycle()
     val pillNav = remember { prefs.getBoolean(PreferenceManager.KEY_PILL_NAV, false) }
+    val showRecentsFilterChips = remember(settingsState) {
+        prefs.getBoolean(PreferenceManager.KEY_SHOW_RECENTS_FILTER_CHIPS, true)
+    }
     val favoritesEnabled = prefs.getBoolean(PreferenceManager.KEY_TAB_SHOW_FAVORITES, false)
     val contactsEnabled = prefs.getBoolean(PreferenceManager.KEY_TAB_SHOW_CONTACTS, true)
     val dialpadEnabled = prefs.getBoolean(PreferenceManager.KEY_TAB_SHOW_DIALPAD, true)
@@ -315,45 +319,51 @@ fun RecentScreen(navController: NavController, navigator: DestinationsNavigator)
                     if (!isSelecting) {
                         Column {
                             if (!searchEnabled) TopBar(navController, navigator)
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                                    .then(
-                                        if (searchEnabled) Modifier.windowInsetsPadding(WindowInsets.statusBars)
-                                        else Modifier
-                                    )
-                            ) {
-                                LazyRow(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxWidth(),
-                                    contentPadding = PaddingValues(horizontal = 16.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            if (showRecentsFilterChips || (searchEnabled && !settingsEnabled)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                        .then(
+                                            if (searchEnabled) Modifier.windowInsetsPadding(WindowInsets.statusBars)
+                                            else Modifier
+                                        )
                                 ) {
-                                    items(CallLogFilter.entries) { filter ->
-                                        RillFilterChip(stringResource(filter.stringRes), selectedFilter == filter, { _ ->
-                                            viewModel.setFilter(filter)
-                                        })
+                                    if (showRecentsFilterChips) {
+                                        LazyRow(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxWidth(),
+                                            contentPadding = PaddingValues(horizontal = 16.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            items(CallLogFilter.entries) { filter ->
+                                                RillFilterChip(stringResource(filter.stringRes), selectedFilter == filter, { _ ->
+                                                    viewModel.setFilter(filter)
+                                                })
+                                            }
+                                        }
+                                    } else {
+                                        Spacer(Modifier.weight(1f))
                                     }
-                                }
-                                if (searchEnabled && !settingsEnabled) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_settings),
-                                        contentDescription = stringResource(R.string.settings),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier
-                                            .padding(horizontal = 16.dp)
-                                            .combinedClickable(
-                                                onClick = {
-                                                    if (prefs.getBoolean(PreferenceManager.KEY_APP_HAPTICS, true)) {
-                                                        performAppHaptic(context, prefs.getString(PreferenceManager.KEY_APP_HAPTICS_STRENGTH, "light") ?: "light", prefs.getFloat(PreferenceManager.KEY_HAPTICS_CUSTOM_INTENSITY, 0.5f))
-                                                    }
-                                                    navigator.navigate(SettingsScreenDestination)
-                                                },
-                                                interactionSource = null,
-                                                indication = ripple(bounded = false, radius = 22.dp)
-                                            ),
-                                    )
+                                    if (searchEnabled && !settingsEnabled) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_settings),
+                                            contentDescription = stringResource(R.string.settings),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier
+                                                .padding(horizontal = 16.dp)
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        if (prefs.getBoolean(PreferenceManager.KEY_APP_HAPTICS, true)) {
+                                                            performAppHaptic(context, prefs.getString(PreferenceManager.KEY_APP_HAPTICS_STRENGTH, "light") ?: "light", prefs.getFloat(PreferenceManager.KEY_HAPTICS_CUSTOM_INTENSITY, 0.5f))
+                                                        }
+                                                        navigator.navigate(SettingsScreenDestination)
+                                                    },
+                                                    interactionSource = null,
+                                                    indication = ripple(bounded = false, radius = 22.dp)
+                                                ),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -595,6 +605,12 @@ fun CallLogFullContent(
 
         val contactsVM: ContactsViewModel = koinActivityViewModel()
         val settingsState by prefs.settingsChanged.collectAsStateWithLifecycle()
+        val showRecentsFilterChips = remember(settingsState) {
+            prefs.getBoolean(PreferenceManager.KEY_SHOW_RECENTS_FILTER_CHIPS, true)
+        }
+        val showRecentsFavorites = remember(settingsState) {
+            prefs.getBoolean(PreferenceManager.KEY_SHOW_RECENTS_FAVORITES, true)
+        }
         val displayOrder by remember(settingsState) {
             mutableIntStateOf(prefs.getInt(PreferenceManager.KEY_CONTACT_DISPLAY_ORDER, 0))
         }
@@ -615,6 +631,11 @@ fun CallLogFullContent(
         var isEditingFavorites by remember { mutableStateOf(false) }
         LaunchedEffect(selectedFilter) {
             isEditingFavorites = false
+        }
+        LaunchedEffect(showRecentsFilterChips) {
+            if (!showRecentsFilterChips && selectedFilter != CallLogFilter.All) {
+                viewModel.setFilter(CallLogFilter.All)
+            }
         }
         var isFavoritesCollapsed by remember(settingsState) {
             mutableStateOf(prefs.getBoolean(PreferenceManager.KEY_RECENTS_FAVORITES_COLLAPSED, false))
@@ -657,7 +678,8 @@ fun CallLogFullContent(
             )
         }
 
-        val isDataLoading = logs.isEmpty() || (!favouritesEnabled && allContacts.isEmpty())
+        val isDataLoading = logs.isEmpty() ||
+            (showRecentsFavorites && !favouritesEnabled && allContacts.isEmpty())
         if (isDataLoading) {
             // Only show a spinner on the very first launch when no disk cache exists.
             // On subsequent opens the disk cache fills instantly so this won't be seen.
@@ -767,7 +789,12 @@ fun CallLogFullContent(
                         contentPadding = PaddingValues(top = 8.dp, bottom = 168.dp),
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
-                        if (!favouritesEnabled && favorites.isNotEmpty() && selectedFilter == CallLogFilter.All) {
+                        if (
+                            showRecentsFavorites &&
+                            !favouritesEnabled &&
+                            favorites.isNotEmpty() &&
+                            selectedFilter == CallLogFilter.All
+                        ) {
                             item {
                                 Row(
                                     modifier = Modifier

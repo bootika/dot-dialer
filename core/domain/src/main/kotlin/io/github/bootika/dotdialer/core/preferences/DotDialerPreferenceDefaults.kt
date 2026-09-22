@@ -15,6 +15,8 @@ object DotDialerPreferenceDefaults {
         "liquid_glass_ui" to true,
         "pocket_mode_prevention" to true,
         "scroll_animation_enabled" to true,
+        "show_recents_favorites" to true,
+        "show_recents_filter_chips" to true,
         "tab_show_calls" to false,
         "tab_show_contacts" to false,
         "tab_show_dialpad" to false,
