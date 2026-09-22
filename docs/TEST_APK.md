@@ -53,3 +53,18 @@ Check these in order so a failure is easy to isolate:
 The Gradle quality gate verifies compilation, JVM tests, instrumented-test compilation, lint and
 APK assembly. Carrier behavior and manufacturer-specific Telecom integration remain unverified
 until this physical-device pass is completed.
+
+## Delivery contract
+
+Only a test APK that has passed the complete quality gate and APK metadata/signature checks is a
+final test build. Every such build must also be uploaded to the project owner's Google Drive using
+this exact naming pattern:
+
+```text
+.dialog-Dot-Dialer-Test-<versionName>-<versionCode>.apk
+```
+
+The filename must start with `.dialog`, and the last filename segment before `.apk` must be the
+numeric build version (`versionCode`). After upload, read the Drive metadata back and verify the
+exact filename and byte size before sharing the Drive link. Failed, partial or unverified builds
+must not be uploaded as final test APKs.
