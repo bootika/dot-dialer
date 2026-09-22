@@ -338,31 +338,33 @@ fun DialPadContent(
         val telecomManager =
             remember { context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager }
         var pendingSearchCallNumber by remember { mutableStateOf<String?>(null) }
+        var pendingSearchCallLaunchUi by remember { mutableStateOf(true) }
 
         // Helper: place a call respecting the default SIM preference
-        fun placeCallWithSimPreference(num: String) {
+        fun placeCallWithSimPreference(num: String, launchCallUi: Boolean = true) {
             val accounts = try { telecomManager.callCapablePhoneAccounts } catch (_: SecurityException) { emptyList() }
             if (accounts.size > 1) {
                 val simPref = prefs.getInt(PreferenceManager.KEY_DEFAULT_SIM, prefs.getDefaultSimIndexDefault())
                 when {
                     simPref == 1 && accounts.isNotEmpty() -> {
                         replaceNumber("")
-                        makeCall(context, num, accounts[0])
+                        makeCall(context, num, accounts[0], launchCallUi = launchCallUi)
                     }
 
                     simPref == 2 && accounts.size >= 2 -> {
                         replaceNumber("")
-                        makeCall(context, num, accounts[1])
+                        makeCall(context, num, accounts[1], launchCallUi = launchCallUi)
                     }
 
                     else -> {
                         pendingSearchCallNumber = num
+                        pendingSearchCallLaunchUi = launchCallUi
                         showSimPicker = true
                     }
                 }
             } else {
                 replaceNumber("")
-                makeCall(context, num)
+                makeCall(context, num, launchCallUi = launchCallUi)
             }
         }
 
@@ -472,19 +474,22 @@ fun DialPadContent(
         ) { permissions ->
             if (permissions[Manifest.permission.CALL_PHONE] == true) {
                 val numToCall = pendingSearchCallNumber ?: number
+                val launchCallUi = pendingSearchCallLaunchUi
                 pendingSearchCallNumber = null
+                pendingSearchCallLaunchUi = true
                 val hasPhoneState = ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.READ_PHONE_STATE
                 ) == PackageManager.PERMISSION_GRANTED
                 if (hasPhoneState) {
-                    placeCallWithSimPreference(numToCall)
+                    placeCallWithSimPreference(numToCall, launchCallUi = launchCallUi)
                 } else {
                     replaceNumber("")
-                    makeCall(context, numToCall)
+                    makeCall(context, numToCall, launchCallUi = launchCallUi)
                 }
             } else {
                 pendingSearchCallNumber = null
+                pendingSearchCallLaunchUi = true
             }
         }
 
@@ -589,9 +594,10 @@ fun DialPadContent(
             // non-interactive request/response and fails outright on many devices, carriers,
             // and dual-SIM setups.
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                placeCallWithSimPreference(decoded)
+                placeCallWithSimPreference(decoded, launchCallUi = false)
             } else {
                 pendingSearchCallNumber = decoded
+                pendingSearchCallLaunchUi = false
                 callPermissionLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE))
             }
             return true
@@ -617,6 +623,7 @@ fun DialPadContent(
                 }
             } else {
                 pendingSearchCallNumber = cleanNum
+                pendingSearchCallLaunchUi = true
                 callPermissionLauncher.launch(arrayOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_PHONE_STATE))
             }
         }
@@ -626,8 +633,14 @@ fun DialPadContent(
                 onDismissRequest = { showSimPicker = false },
                 onSimSelected = { handle ->
                     replaceNumber("")
-                    makeCall(context, pendingSearchCallNumber ?: number, handle)
+                    makeCall(
+                        context,
+                        pendingSearchCallNumber ?: number,
+                        handle,
+                        launchCallUi = pendingSearchCallLaunchUi,
+                    )
                     pendingSearchCallNumber = null
+                    pendingSearchCallLaunchUi = true
                     showSimPicker = false
                 }
             )

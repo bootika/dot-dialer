@@ -18,6 +18,13 @@ object DiagnosticFormatter {
             "changing_configuration" to event.changingConfiguration,
         )
 
+        is DiagnosticEvent.CallActivityLifecycle -> fields(
+            "call_activity",
+            "stage" to event.stage,
+            "pending_outgoing" to event.pendingOutgoingLaunch,
+            "telecom_in_call" to (event.telecomInCall ?: "unknown"),
+        )
+
         DiagnosticEvent.CallServiceStarted -> "call_service_started"
 
         is DiagnosticEvent.CallAdded -> fields(

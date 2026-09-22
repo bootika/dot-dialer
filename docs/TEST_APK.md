@@ -16,10 +16,10 @@ phone app.
 Open the APK on the phone and allow installation from that source, or use ADB:
 
 ```shell
-adb install -r app/build/outputs/apk/foss/debug/dot-dialer-56-foss-debug.apk
+adb install -r app/build/outputs/apk/foss/debug/dot-dialer-57-foss-debug.apk
 ```
 
-The `56` segment is the current version code and changes when the project version is incremented.
+The `57` segment is the current version code and changes when the project version is incremented.
 
 If Android reports a signature mismatch after switching between a local and a CI-built APK,
 uninstall only `Dot Dialer Test`, then install the new APK. Its settings and local diagnostic log

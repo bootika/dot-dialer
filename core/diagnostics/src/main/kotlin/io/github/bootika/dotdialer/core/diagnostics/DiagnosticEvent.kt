@@ -15,6 +15,12 @@ sealed interface DiagnosticEvent {
         val changingConfiguration: Boolean = false,
     ) : DiagnosticEvent
 
+    data class CallActivityLifecycle(
+        val stage: ActivityStage,
+        val pendingOutgoingLaunch: Boolean,
+        val telecomInCall: Boolean?,
+    ) : DiagnosticEvent
+
     data object CallServiceStarted : DiagnosticEvent
 
     data class CallAdded(

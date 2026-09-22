@@ -39,6 +39,10 @@ import dev.goodwy.rphone.controller.util.CallBackgroundStore
 import dev.goodwy.rphone.controller.util.AndroidHaptics
 import dev.goodwy.rphone.controller.util.PreferenceManager
 import io.github.bootika.dotdialer.core.haptics.HapticIntent
+import io.github.bootika.dotdialer.core.call.CallPresentationPolicy
+import io.github.bootika.dotdialer.core.diagnostics.ActivityStage
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
+import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
 import dev.goodwy.rphone.liquidglass.LocalLiquidGlassBackdrop
 import dev.goodwy.rphone.liquidglass.backdrops.rememberLayerBackdrop
 import dev.goodwy.rphone.modal.`interface`.CallSession
@@ -72,9 +76,12 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
     private var proximityWakeLock: PowerManager.WakeLock? = null
     private val isFinishingCall = java.util.concurrent.atomic.AtomicBoolean(false)
     private var keyguardDismissRequested = false
+    private var pendingOutgoingLaunch = false
     private val identityCache = mutableMapOf<String, CachedCallIdentity>()
 
     companion object {
+        const val EXTRA_PENDING_OUTGOING_CALL = "pending_outgoing_call"
+
         /** FloatingCallService observes this to hide the bubble when CallActivity is visible. */
         val isInForeground = kotlinx.coroutines.flow.MutableStateFlow(false)
     }
@@ -83,13 +90,28 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
         turnScreenOnAndShowWhileLocked()
         super.onCreate(savedInstanceState)
 
+        pendingOutgoingLaunch = intent.getBooleanExtra(EXTRA_PENDING_OUTGOING_CALL, false)
+
         CallBackgroundStore.attach(preferenceManager)
 
         val isTelecomInCall = telecomInCall()
         val repositoryHasActiveCall = callViewModel.allCalls.value.any {
             it.state != Call.STATE_DISCONNECTED && it.state != Call.STATE_DISCONNECTING
         }
-        if (isTelecomInCall == false || (isTelecomInCall == null && !repositoryHasActiveCall)) {
+        AppDiagnostics.record(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.CREATED,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+                telecomInCall = isTelecomInCall,
+            )
+        )
+        if (
+            CallPresentationPolicy.shouldFinishBeforeRendering(
+                telecomInCall = isTelecomInCall,
+                repositoryHasActiveCall = repositoryHasActiveCall,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+            )
+        ) {
             setShowWhenLocked(false)
             setTurnScreenOn(false)
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -116,8 +138,12 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
 //                val callerMetadata by callViewModel.callerMetadata.collectAsStateWithLifecycle()
 
                 var retainedSession by remember { mutableStateOf<CallSession?>(null) }
+                var awaitingOutgoingSession by remember { mutableStateOf(pendingOutgoingLaunch) }
                 LaunchedEffect(session) {
-                    session?.let { retainedSession = it }
+                    session?.let {
+                        retainedSession = it
+                        awaitingOutgoingSession = false
+                    }
                 }
 
                 val displaySession = session ?: retainedSession
@@ -193,7 +219,11 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
                     }
 
                     if (session == null) {
-                        delay(400.milliseconds)
+                        delay(
+                            CallPresentationPolicy.missingSessionDismissDelayMillis(
+                                awaitingOutgoingSession = awaitingOutgoingSession,
+                            ).milliseconds
+                        )
                         if (callViewModel.allCalls.value.none { it.state != Call.STATE_DISCONNECTED }) {
                             dismissCallScreen()
                         }
@@ -361,6 +391,13 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
 
     override fun onResume() {
         super.onResume()
+        AppDiagnostics.record(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.RESUMED,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+                telecomInCall = telecomInCall(),
+            )
+        )
         turnScreenOnAndShowWhileLocked()
         isInForeground.value = true
     }
@@ -382,6 +419,13 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
     }
 
     override fun onDestroy() {
+        AppDiagnostics.record(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.DESTROYED,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+                telecomInCall = telecomInCall(),
+            )
+        )
         releaseProximityLock()
         proximityWakeLock = null
         callViewModel.setIsActivityVisible(false)
@@ -391,6 +435,14 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        pendingOutgoingLaunch = intent.getBooleanExtra(EXTRA_PENDING_OUTGOING_CALL, false)
+        AppDiagnostics.record(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.NEW_INTENT,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+                telecomInCall = telecomInCall(),
+            )
+        )
         if (!isFinishingCall.get() && callViewModel.allCalls.value.any { it.state != Call.STATE_DISCONNECTED }) {
             turnScreenOnAndShowWhileLocked()
         }
@@ -448,6 +500,13 @@ class CallActivity : FragmentActivity() { //ComponentActivity()
 
     override fun onStop() {
         super.onStop()
+        AppDiagnostics.record(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.STOPPED,
+                pendingOutgoingLaunch = pendingOutgoingLaunch,
+                telecomInCall = telecomInCall(),
+            )
+        )
         if (proximityWakeLock?.isHeld != true) {
             callViewModel.setIsActivityVisible(false)
         }

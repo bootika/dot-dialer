@@ -7,6 +7,7 @@ import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
@@ -34,8 +35,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import dev.goodwy.rphone.R
+import dev.goodwy.rphone.controller.CallActivity
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticComponent
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticEvent
+import io.github.bootika.dotdialer.core.diagnostics.DiagnosticOperation
+import io.github.bootika.dotdialer.diagnostics.AppDiagnostics
 
-fun makeCall(context: Context, number: String, accountHandle: PhoneAccountHandle? = null, contactId: String? = null) {
+fun makeCall(
+    context: Context,
+    number: String,
+    accountHandle: PhoneAccountHandle? = null,
+    contactId: String? = null,
+    launchCallUi: Boolean = true,
+) {
     val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
 
     val uri = if (number.startsWith("voicemail:")) {
@@ -87,6 +99,7 @@ fun makeCall(context: Context, number: String, accountHandle: PhoneAccountHandle
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(callIntent)
+                if (launchCallUi) launchOutgoingCallUiFromForeground(context)
                 return
             } catch (e: Exception) {
                 // fallback to placeCall below
@@ -95,6 +108,7 @@ fun makeCall(context: Context, number: String, accountHandle: PhoneAccountHandle
 
         try {
             telecomManager.placeCall(uri, extras)
+            if (launchCallUi) launchOutgoingCallUiFromForeground(context)
         } catch (e: Exception) {
             try {
                 val callIntent = Intent(Intent.ACTION_CALL, uri).apply {
@@ -102,6 +116,7 @@ fun makeCall(context: Context, number: String, accountHandle: PhoneAccountHandle
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(callIntent)
+                if (launchCallUi) launchOutgoingCallUiFromForeground(context)
             } catch (e2: Exception) {
                 val dialIntent = Intent(Intent.ACTION_DIAL, uri).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -115,6 +130,41 @@ fun makeCall(context: Context, number: String, accountHandle: PhoneAccountHandle
         }
         context.startActivity(intent)
     }
+}
+
+private fun launchOutgoingCallUiFromForeground(context: Context) {
+    val activity = context.findActivity()
+    if (activity == null) {
+        AppDiagnostics.record(
+            DiagnosticEvent.Failure(
+                component = DiagnosticComponent.MAIN_ACTIVITY,
+                operation = DiagnosticOperation.START_ACTIVITY,
+                errorType = "NoActivityContext",
+            )
+        )
+        return
+    }
+    val intent = Intent(activity, CallActivity::class.java).apply {
+        addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        putExtra(CallActivity.EXTRA_PENDING_OUTGOING_CALL, true)
+    }
+    try {
+        activity.startActivity(intent)
+    } catch (error: Exception) {
+        AppDiagnostics.record(
+            DiagnosticEvent.Failure(
+                component = DiagnosticComponent.MAIN_ACTIVITY,
+                operation = DiagnosticOperation.START_ACTIVITY,
+                errorType = error.javaClass.simpleName,
+            )
+        )
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 /**

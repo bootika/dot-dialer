@@ -7,6 +7,22 @@ import org.junit.Test
 
 class DiagnosticFormatterTest {
     @Test
+    fun `call activity lifecycle shows whether foreground launch reached the screen`() {
+        val line = DiagnosticFormatter.format(
+            DiagnosticEvent.CallActivityLifecycle(
+                stage = ActivityStage.RESUMED,
+                pendingOutgoingLaunch = true,
+                telecomInCall = true,
+            )
+        )
+
+        assertEquals(
+            "call_activity | stage=RESUMED | pending_outgoing=true | telecom_in_call=true",
+            line,
+        )
+    }
+
+    @Test
     fun `call events contain only session identity and lifecycle state`() {
         val line = DiagnosticFormatter.format(
             DiagnosticEvent.CallAdded(

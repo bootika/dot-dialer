@@ -1,5 +1,6 @@
 package io.github.bootika.dotdialer.core.call
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -29,6 +30,32 @@ class CallPresentationPolicyTest {
                 isIncomingRinging = false,
                 alwaysFullScreen = false,
             )
+        )
+    }
+
+    @Test
+    fun `foreground outgoing launch survives the telecom registration race`() {
+        assertFalse(
+            CallPresentationPolicy.shouldFinishBeforeRendering(
+                telecomInCall = false,
+                repositoryHasActiveCall = false,
+                pendingOutgoingLaunch = true,
+            )
+        )
+        assertTrue(
+            CallPresentationPolicy.shouldFinishBeforeRendering(
+                telecomInCall = false,
+                repositoryHasActiveCall = false,
+                pendingOutgoingLaunch = false,
+            )
+        )
+        assertEquals(
+            3_000L,
+            CallPresentationPolicy.missingSessionDismissDelayMillis(awaitingOutgoingSession = true),
+        )
+        assertEquals(
+            400L,
+            CallPresentationPolicy.missingSessionDismissDelayMillis(awaitingOutgoingSession = false),
         )
     }
 }
